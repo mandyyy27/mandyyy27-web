@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Earthquake From 2012 to 2022</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.13.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.13.0/mapbox-gl.js"></script>
+<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+<style>
+body { margin: 0; padding: 0;
+    background-image: url("https://th.bing.com/th/id/R.866cd6a9ef50674628f0388eec401936?rik=WjARnV4oNZEGmg&riu=http%3a%2f%2fpic4.bbzhi.com%2ffengjingbizhi%2fhaiyangshijiedongtaizhuomianbizhi%2fhaiyangshijiedongtaizhuomianbizhi_363138_9.jpg&ehk=meZjHz01isaNXZlmeLOSVyxiqvfrMbPrUd3qJvmzbQY%3d&risl=&pid=ImgRaw&r=0");
+background-size: cover}
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+</style>
+</head>
+<body>
+<style>
+    .map-overlay {
+        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        position: absolute;
+        width: 25%;
+        top: 0;
+        left: 0;
+        padding: 10px;
+    }
+
+    .map-overlay .map-overlay-inner {
+        background-color: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .map-overlay h2 {
+        line-height: 24px;
+        display: block;
+        margin: 0 0 10px;
+    }
+
+    .map-overlay .legend .bar {
+        height: 10px;
+        width: 100%;
+        background: linear-gradient(to right, #fca107, #7f3121);
+    }
+
+    .map-overlay input {
+        background-color: transparent;
+        display: inline-block;
+        width: 100%;
+        position: relative;
+        margin: 0;
+        cursor: ew-resize;
+    }
+    #button{
+        color: #2B8CBE;
+    }
+    .coordinates {
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    position: absolute;
+    bottom: 40px;
+    left: 10px;
+    padding: 5px 10px;
+    margin: 0;
+    font-size: 11px;
+    line-height: 18px;
+    border-radius: 3px;
+    display: none;
+    }
+</style>
+
+<div id="map"></div>
+
+<div class="map-overlay top">
+    <div class="map-overlay-inner">
+        <h2>Earthquakes From 2012 to 2022</h2>
+        <label id="year"></label>
+        <input id="slider" type="range" min="0" max="10" step="1" value="0">
+    </div>
+    <div class="map-overlay-inner">
+        <h2>Set the min value of magnitude</h2>
+        <label id="magnitude"></label>
+        <input id="slider2" type="range" min="0" max="10" step="1" value="0">
+    </div>
+    <div class="map-overlay-inner">
+        <div id="legend" class="legend">
+            <div class="bar"></div>
+            <div>Magnitude (M)</div>
+        </div>
+    </div>
+        <label id="switch"></label>
+        <button id="button" ><h3>Switch the type of map</h3></button>
+
+</div>
+<pre id="coordinates" class="coordinates"></pre>
+
+<script>
+	mapboxgl.accessToken = 'pk.eyJ1IjoiZmx5bWUybW9vbiIsImEiOiJjbGVzYWZ1cXcwM3FkM3h0ZXRiNnJwY3pqIn0.wcWJhmgeKm_T0t8GqzlUpQ';
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/flyme2moon/clff2d0iq00hz01mxfuw7saho',
+        projection: 'globe',
+        center: [-45, 0],
+        zoom: 2
+    });
+
+    const years = [
+        '2012',
+        '2013',
+        '2014',
+        '2015',
+        '2016',
+        '2017',
+        '2018',
+        '2019',
+        '2020',
+        '2021',
+        '2022'
+    ];
+
+    const Magnitudes = [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10"
+    ]
+
+    function filterBy(year, magnitude) {
+        const filters = ["all", ['==', 'year', year], ['>=', 'Magnitude (M)', magnitude]];
+        map.setFilter('earthquake-circles', filters);
+        map.setFilter('earthquake-labels', filters);
+        map.setFilter('earthquake-heatmap', filters);
+
+
+        document.getElementById('year').textContent = years[year];
+        document.getElementById('magnitude').textContent = Magnitudes[magnitude];
+    }
+
+    map.on('load', () => {
+        jsonCallback()
+    });
+
+    function jsonCallback() {
+        var data =  $.parseJSON($.ajax({
+            url: "./data/data.json",
+            dataType: "json",
+            async: false
+        }).responseText);
+
+        data.features = data.features.map((d) => {
+            d.properties.year = new Date(d.properties["Moment of shock"]).getFullYear()-2012;
+            return d;
+        });
+
+        map.addSource('earthquakes', {
+            'type': 'geojson',
+            data: data
+        });
+
+        map.addLayer({
+            'id': 'earthquake-circles',
+            'type': 'circle',
+            'source': 'earthquakes',
+            'paint': {
+                'circle-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['get', 'Magnitude (M)'],
+                    4,
+                    '#FCA107',
+                    7.5,
+                    '#7F3121'
+                ],
+                'circle-opacity': 0.75,
+                'circle-radius': [
+                    'interpolate',
+                    ['linear'],
+                    ['get', 'Magnitude (M)'],
+                    6,
+                    5,
+                    8,
+                    10
+                ]
+            },
+            "layout": {"visibility": 'visible'}
+
+        }
+        );
+
+        map.addLayer({
+            'id': 'earthquake-labels',
+            'type': 'symbol',
+            'source': 'earthquakes',
+            'layout': {
+                'text-field': ['concat', ['to-string', ['get', 'Magnitude (M)']], 'm'],
+                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                'text-size': 12,
+                "visibility": 'visible'
+            },
+            'paint': {
+                'text-color': 'rgba(0,0,0,0.5)'
+            },
+        });
+
+        map.addLayer({
+            'id': 'earthquake-heatmap',
+            'type': 'heatmap',
+            'source': 'earthquakes',
+            'heatmap-weight': {
+            property: 'dbh',
+            type: 'exponential',
+            stops: [
+              [1, 0],
+              [10, 1]
+            ]
+          },
+          // increase intensity as zoom level increases
+          'heatmap-intensity': {
+            stops: [
+              [11, 1],
+              [15, 3]
+            ]
+          },
+          // assign color values be applied to points depending on their density
+          'heatmap-color': [
+            'interpolate',
+            ['linear'],
+            ['heatmap-density'],
+            0.1,
+            "#927903",
+            0.6,
+            "#ffd403",
+            1,
+            "#ffd403"
+          ],
+          // increase radius as zoom increases
+          'heatmap-radius': {
+                stops: [
+                  [11, 5],
+                  [15, 10]
+                ]
+          },
+          // decrease opacity to transition into the circle layer
+          'heatmap-opacity': {
+            default: 1,
+            stops: [
+              [14, 1],
+              [15, 0]
+            ]
+          },
+            'layout':
+             {
+            'visibility': 'none'
+            }
+        }
+
+        );
+
+
+        filterBy(0, 0);
+
+        document.getElementById('slider').addEventListener('input', (e) => {
+            const year = parseInt(e.target.value, 10);
+            const magnitude = parseInt(document.getElementById('slider2').value, 10);
+            filterBy(year, magnitude);
+        });
+
+        document.getElementById('slider2').addEventListener('input', (e) => {
+            const year = parseInt(document.getElementById('slider').value, 10);
+            const magnitude = parseInt(e.target.value, 10);
+            filterBy(year, magnitude);
+        });
+        document.getElementById('button').addEventListener('click', () => {
+            var visibility = map.getLayoutProperty('earthquake-circles', 'visibility');
+
+            if (visibility === 'visible') {
+                 map.setLayoutProperty('earthquake-circles', 'visibility', 'none');
+                 map.setLayoutProperty('earthquake-heatmap', 'visibility', 'visible');
+            } else {
+                map.setLayoutProperty("earthquake-circles", 'visibility', 'visible');
+                map.setLayoutProperty('earthquake-heatmap', 'visibility', 'none');
+            }
+        });
+
+    }
+    var data =  $.parseJSON($.ajax({
+            url: "./data/data.json",
+            dataType: "json",
+            async: false
+        }).responseText);
+    const marker = new mapboxgl.Marker({
+    draggable: true
+    })
+    .setLngLat([-45, 0])
+    .addTo(map);
+
+    function onDragEnd() {
+        var count=0;
+        const lngLat = marker.getLngLat();
+        for(var i=0,l=data.features.length;i<l;i++){
+　　          loc = data.features[i].geometry.coordinates;
+             if(Math.abs(loc[0]-lngLat.lng)<3 && Math.abs(loc[1]-lngLat.lat)<3){
+                 count += 1;
+             }
+        }
+        coordinates.style.display = 'block';
+        coordinates.innerHTML = `Longitude: ${lngLat.lng}<br />Latitude: ${lngLat.lat}<br />Num of Earthquake in Past Ten Years Near the Marker: ${count}`;
+    }
+
+    marker.on('dragend', onDragEnd);
+</script>
+
+</body>
+</html>
