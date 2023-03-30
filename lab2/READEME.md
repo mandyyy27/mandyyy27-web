@@ -2,6 +2,7 @@ Title: Earthquake distribution and value and magnitude
 ![WechatIMG1043](https://user-images.githubusercontent.com/123501855/228759579-4d2a1456-9eec-4846-b69b-341e3a162f90.png)
 
 This map is for anyone interested in maps and earthquakes, and as a resident of the West Coast growing up, I have always been highly interested in earthquakes and seismic zones. However, I am not sure of the exact frequency and magnitude of earthquakes.
+https://mandyyy27.github.io/lab2/LAB2.html
 
 In order to clear up the last data bias issue, I learned some python tricks to clean up the data from my computer science classmates, and although it was not proficient and took a large portion of my time, it was extremely helpful in organizing the data for this map.
 
